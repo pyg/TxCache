@@ -10,7 +10,7 @@ public class WebApp {
 		try
 		{
 			Class.forName("org.postgresql.Driver");
-			String dbURL = "jdbc:postgresql://192.168.197.128/test";
+			String dbURL = "jdbc:postgresql://emotion.cs.umass.edu/test";
 			Connection dbCon = DriverManager.getConnection(dbURL, "keen", "hunter2");
 			Statement st = dbCon.createStatement();
 			ResultSet rs = st.executeQuery("SELECT VERSION()");
@@ -22,9 +22,9 @@ public class WebApp {
 		}
 		WebApp.cache = new HashMap<String, Object>();
 		
-		double x = (Double) call("TxCache","add",new Object[] {(double)1000000000.0, (double)2});
+		double x = (Double) call("WebApp","add",new Object[] {(double)1000000000.0, (double)2});
 		System.out.println(x);
-		double y = (Double) call("TxCache","add",new Object[] {(double)1000000000.0, (double)2});
+		double y = (Double) call("WebApp","add",new Object[] {(double)1000000000.0, (double)2});
 		System.out.println(y);
 		System.out.println(cache);
 	}

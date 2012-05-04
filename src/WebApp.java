@@ -13,22 +13,18 @@ public class WebApp {
 			String dbURL = "jdbc:postgresql://192.168.197.128/test";
 			Connection dbCon = DriverManager.getConnection(dbURL, "keen", "hunter2");
 			Statement st = dbCon.createStatement();
-			st.executeUpdate("BEGIN READ ONLY ISOLATION LEVEL SERIALIZABLE;PIN;");
-			
-			ResultSet rs = st.executeQuery("SELECT * FROM jdbc_demo WHERE code=1");
-			
+			ResultSet rs = st.executeQuery("SELECT VERSION()");
 			if (rs.next()) {
-				System.out.println(rs.getString(2));
-				System.out.println(st.getWarnings());
+				System.out.println(rs.getString(1));
 			}
 		} catch (SQLException ex) {
 			System.out.println("fail");
 		}
 		WebApp.cache = new HashMap<String, Object>();
 		
-		double x = (Double) call("WebApp","add",new Object[] {(double)1000000000.0, (double)2});
+		double x = (Double) call("TxCache","add",new Object[] {(double)1000000000.0, (double)2});
 		System.out.println(x);
-		double y = (Double) call("WebApp","add",new Object[] {(double)1000000000.0, (double)2});
+		double y = (Double) call("TxCache","add",new Object[] {(double)1000000000.0, (double)2});
 		System.out.println(y);
 		System.out.println(cache);
 	}

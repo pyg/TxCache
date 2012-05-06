@@ -1,0 +1,8 @@
+open a terminal:
+./server
+
+Open another terminal:
+./client1 localhost
+#Then type into message
+./client2 localhost
+#Then type into another message

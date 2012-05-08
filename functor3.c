@@ -1,3 +1,5 @@
+// REQUIRES g++ 4.7 OR LATER. COMPILE WITH g++ --std=c++0x ./functor3.c -o a.out
+
 #include <functional>
 #include <unordered_map>
 #include <memory>
@@ -39,6 +41,6 @@ unsigned long fibonacci(unsigned n, char a)
 }
 
 int main (void) {
-    long u = fibonacci(400, 'a');
+    long u = memoized_recursion(fibonacci)(400, 'a');
 	printf("%u\n",u);
 }

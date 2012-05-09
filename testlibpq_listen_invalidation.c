@@ -1,8 +1,3 @@
-/*
- * testlibpq.c
- *
- *              Test the C version of LIBPQ, the POSTGRES frontend library.
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include "libpq-fe.h"

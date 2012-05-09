@@ -5,9 +5,11 @@
 //TransactionType tran_type;
 //PinCushion pincushion;
 //PinSet pinset;
+//TagSet tags;
+//Interval interval;
 
 void BEGIN-RO(TxTime staleness) {
-	//tell the DB to start RO
+	//DON'T tell the DB to start RO, as we don't know the snapshot ID
 	//if (!caching) return;
 	//tran_type = READONLY;
 	//tell the Cache Server to start RO
@@ -38,15 +40,25 @@ void ABORT() {
 }
 
 void PQexecWrapper() {
-	//if (tran_type == READONLY) {
-	//	add to cache;
-	//}
 	//PQexec(...);
+	//if (tran_type == READONLY) {
+	//	update interval
+	//	tagset.add(tags);
+	//}
 }
 
 void some_wrapper() {
 	//if (tran_type == READONLY) {
-	//	if (hit cache) return value;
+	//	look up cache and update pinset
+	//	if (hit) return value;
+	//	else {
+	//		interval = (-oo, +oo)
+	//		clear tagset;
+	//		id = select a snapshot from pinset
+	//		tell the DB to begin ro with snapshot id
+	//		invoke the original function;
+	//		add the value with its interval and tags into cache
+	//	}
 	//}
 	//else invoke the original function;
 }

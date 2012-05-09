@@ -4,7 +4,7 @@
 #include <jni.h>
 #include "JNIFoo.h"
 
-//gcc -shared -fpic -o libfoo.so -I/usr/lib/jvm/java-6-openjdk/include/ -I/usr/lib/jvm/java-6-openjdk/include/linux/ -I/usr/include/postgresql/ -L/usr/include/postgresql/ -lpq foo_libpq.c
+//gcc -shared -fpic -o libfoo.so -I/usr/lib/jvm/jdk1.7.0_03/include/ -I/usr/lib/jvm/jdk1.7.0_03/include/linux/ foo.c
 
 #include "libpq-fe.h"
 
@@ -47,6 +47,45 @@ JNIEXPORT jstring JNICALL Java_JNIFoo_nativeFoo (JNIEnv *env, jobject obj)
 		strcpy(newstring,"connection success.");
                 
 	}
+
+	//***begin:in the beginning of the whole program, make it listen
+	res=PQexec(conn,"\set QUIET off");
+	res=PQexec(conn,"LISTEN invalidation;");
+	printf("%-25s\n", PQcmdStatus(res));
+	//***end:make it listen ends
+
+        res=PQexec(conn, "BEGIN ISOLATION LEVEL SERIALIZABLE;INSERT INTO bar VALUES (10);");
+	//***begin:invalidation part, from commit
+	res = PQexec(conn,"COMMIT;");
+	PGnotify   *notify;
+	const char invalidation_tag[25] = {"invalidation"};
+        while ((notify = PQnotifies(conn)) != NULL) {
+		if(strcmp(invalidation_tag,notify->relname) == 0) {
+			PGresult   *res_tags;
+			res_tags = PQexec(conn, "SELECT * from pg_invalidations;");
+        		//print out the rows 
+       			for (i = 0; i < PQntuples(res_tags); i++) {
+        	                printf("%d\t", atoi(PQgetvalue(res_tags, i, 0)));
+				printf("%s-15", PQgetvalue(res_tags, i, 1));
+        	        	printf("\n");
+        		}
+			PQclear(res_tags);
+		}
+		PQfreemem(notify);
+        }
+	//***end:invalidation part
+
+        PQclear(res);
+        /* close the portal ... we don't bother to check for errors ... */
+        res = PQexec(conn, "CLOSE myportal");
+        PQclear(res);
+
+        /* end the transaction */
+        res = PQexec(conn, "END");
+        PQclear(res);
+		
+        /* close the connection to the database and cleanup */
+        PQfinish(conn);
   
   //strcpy(newstring,"hello");
   ret = (*env)->NewStringUTF(env, newstring);

@@ -1,4 +1,8 @@
 import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.*;
 
 public class TxCache {
 	static final int CONNECTION_OK = 0;
@@ -6,19 +10,19 @@ public class TxCache {
 	static final String INITIALIZATION_SUCCESS = "SUCCESS";
 	static final int MAX_NUMBER_OF_CONNECTIONS = 10;
 
-	private static native String UMASSPQinitialize();
+	public static native String UMASSPQinitialize();
 	
     private static native String PQconnectdb(String conninfo);
-    private static native int PQstatus(String conn);
-	private static native String PQerrorMessage(String conn);
+    public static native int PQstatus(String conn);
+	public static native String PQerrorMessage(String conn);
 	private static native String PQexec(String conn, String sql);
-	private static native int PQresultStatus(String res);
-	private static native void PQclear(String res);
-	private static native String PQcmdStatus(String res);
+	public static native int PQresultStatus(String res);
+	public static native void PQclear(String res);
+	public static native String PQcmdStatus(String res);
 	private static native void PQfinish(String conn);
-	private static native int PQntuples(String res);
-	private static native int PQnfields(String res);
-	private static native String PQgetvalue(String res, int i, int j);
+	public static native int PQntuples(String res);
+	public static native int PQnfields(String res);
+	public static native String PQgetvalue(String res, int i, int j);
 
 
     static {
@@ -154,15 +158,16 @@ public class TxCache {
 	wrap(PQexec, arg) //invoke TxCache.PQexecWrapper()..... (conn, "select *")
 */
 	
-	public static void TxPQexec(String conn, String sqlstmt) {
-		if (!caching.containsKey(conn)) return; // **No such connection
+	public static String TxPQexec(String conn, String sqlstmt) {
+		if (!caching.containsKey(conn)) return null; // **No such connection
 		
-		PQexec(conn, sqlstmt);
-		if (!caching.get(conn)) return; // **Do nothing
+		String res = PQexec(conn, sqlstmt);
+		if (!caching.get(conn)) return res; // **Do nothing
 		//if (tran_type == READONLY) {
 		//	update interval
 		//	tagset.add(tags);
 		//}
+        return res;
 	}
 	
 	public static String TxPQconnectdb(String conninfo, Boolean doCache) {
@@ -194,8 +199,38 @@ public class TxCache {
 		//tell the DB to UNPIN(snapshotid);
 	}
 
-	public void some_wrapper() { // It should be in user program and outside TxCache.
-		//if (tran_type == READONLY) {
+    @SuppressWarnings("unchecked")
+	public static <T> T wrap(String clazz, String method, Object... args) throws Exception { 
+        Class<?> theClass = Class.forName(clazz);
+		Class<?>[] arguments = new Class<?>[args.length];
+		
+		String key = clazz + ".." + method;
+		for (int i = 0; i < args.length; ++i) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ObjectOutputStream oos = new ObjectOutputStream(baos);
+			oos.writeObject(args[i]);
+			key += ".." + baos.toString();
+			//key += ".." + args[i].toString();
+			arguments[i] = args[i].getClass();
+		}
+        
+        System.out.println(key); // valid in cache? return if
+        
+        
+        Method toCall = theClass.getMethod(method, arguments);
+		
+		Object result;
+		if (theClass.getName() == "Statement" && toCall.getName() == "executeQuery") {
+			result = toCall.invoke(TxCache.class, args); // Connection create statement, resultset?
+		} else {
+			result = toCall.invoke(theClass, args);
+		}
+		
+        // update in cache
+        
+		return (T) result;
+		
+        //if (tran_type == READONLY) {
 		//	look up cache and update pinset (and --pin.using!)
 		//	if (hit) return value;
 		//	else {
@@ -222,6 +257,10 @@ public class TxCache {
 		//}
 		//else invoke the original function;
 	}
+    public static void main(String[] args) {
+        TxCache.initializeTxCache();
+        //functions
+    }
 }
 
 /*
@@ -234,8 +273,6 @@ public class TxCache {
 //Interval interval;
 
 
-
-int main() {
-	//functions
-}
 */
+
+/**/

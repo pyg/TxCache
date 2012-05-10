@@ -1,4 +1,0 @@
-javac JNIFoo.java
-javah -jni JNIFoo
-gcc -fpic -shared foo.c -I $JAVA_HOME/include/ -I $JAVA_HOME/include/linux/ -o libfoo.so
-java -Djava.library.path=. JNIFoo

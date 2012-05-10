@@ -45,7 +45,7 @@ UMASS_PGconn conns[umass_max_number_of_connections];
 
 //==============================================================================
 
-int UMASS_getConnId(JNIEnv *env, jobject obj, jstring conninfo) {
+int UMASS_getConnId(JNIEnv *env, jclass obj, jstring conninfo) {
 	const char *cInfo = (env)->GetStringUTFChars(conninfo, 0);
 	int conn_id = cInfo[umass_connection_id_posi] - '0';
 	env->ReleaseStringUTFChars(conninfo, cInfo);
@@ -54,7 +54,7 @@ int UMASS_getConnId(JNIEnv *env, jobject obj, jstring conninfo) {
 	return conn_id;
 }
 
-int UMASS_getResultId(JNIEnv *env, jobject obj, jstring resinfo) {
+int UMASS_getResultId(JNIEnv *env, jclass obj, jstring resinfo) {
 	const char *rInfo = (env)->GetStringUTFChars(resinfo, 0);
 	int conn_id = rInfo[1] - '0';
 	if (conn_id < 0 || conn_id >= umass_max_number_of_connections) return -1;
@@ -69,7 +69,7 @@ int UMASS_getResultId(JNIEnv *env, jobject obj, jstring resinfo) {
 
 //==============================================================================
 
-JNIEXPORT jstring JNICALL Java_TxCache_UMASSPQinitialize (JNIEnv *env, jobject obj)
+JNIEXPORT jstring JNICALL Java_TxCache_UMASSPQinitialize (JNIEnv *env, jclass obj)
 {
 	jstring ret = 0;
 	umass_number_of_connections = 0;
@@ -110,7 +110,7 @@ JNIEXPORT jstring JNICALL Java_TxCache_UMASSPQinitialize (JNIEnv *env, jobject o
 	return ret;
 }
 
-JNIEXPORT jstring JNICALL Java_TxCache_PQconnectdb (JNIEnv *env, jobject obj, jstring conninfo)
+JNIEXPORT jstring JNICALL Java_TxCache_PQconnectdb (JNIEnv *env, jclass obj, jstring conninfo)
 {
 	jstring ret = 0;
 	if (umass_number_of_connections == umass_max_number_of_connections) {
@@ -128,7 +128,7 @@ JNIEXPORT jstring JNICALL Java_TxCache_PQconnectdb (JNIEnv *env, jobject obj, js
 	return ret;
 }
 
-JNIEXPORT jint JNICALL Java_TxCache_PQstatus (JNIEnv *env, jobject obj, jstring conninfo)
+JNIEXPORT jint JNICALL Java_TxCache_PQstatus (JNIEnv *env, jclass obj, jstring conninfo)
 {
 	int conn_id = UMASS_getConnId(env, obj, conninfo);
 	jint ret = umass_pqstatus_CONNECTION_FAIL;
@@ -140,7 +140,7 @@ JNIEXPORT jint JNICALL Java_TxCache_PQstatus (JNIEnv *env, jobject obj, jstring 
 	return ret;
 }
 
-JNIEXPORT jstring JNICALL Java_TxCache_PQerrorMessage (JNIEnv *env, jobject obj, jstring conninfo)
+JNIEXPORT jstring JNICALL Java_TxCache_PQerrorMessage (JNIEnv *env, jclass obj, jstring conninfo)
 {
 	int conn_id = UMASS_getConnId(env, obj, conninfo);
 	jstring ret = 0;
@@ -153,7 +153,7 @@ JNIEXPORT jstring JNICALL Java_TxCache_PQerrorMessage (JNIEnv *env, jobject obj,
 	return ret;
 }
 
-JNIEXPORT jstring JNICALL Java_TxCache_PQexec (JNIEnv *env, jobject obj, jstring conninfo, jstring sqlstmt)
+JNIEXPORT jstring JNICALL Java_TxCache_PQexec (JNIEnv *env, jclass obj, jstring conninfo, jstring sqlstmt)
 {
 	int conn_id = UMASS_getConnId(env, obj, conninfo);
 	jstring ret = 0;
@@ -176,7 +176,7 @@ JNIEXPORT jstring JNICALL Java_TxCache_PQexec (JNIEnv *env, jobject obj, jstring
 	return ret;
 }
 
-JNIEXPORT jint JNICALL Java_TxCache_PQresultStatus (JNIEnv *env, jobject obj, jstring resinfo)
+JNIEXPORT jint JNICALL Java_TxCache_PQresultStatus (JNIEnv *env, jclass obj, jstring resinfo)
 {
 	int res_id = UMASS_getResultId(env, obj, resinfo);
 	jint ret = umass_pqstatus_PGRES_COMMAND_FAIL;
@@ -188,7 +188,7 @@ JNIEXPORT jint JNICALL Java_TxCache_PQresultStatus (JNIEnv *env, jobject obj, js
 	return ret;
 }
 
-JNIEXPORT void JNICALL Java_TxCache_PQclear (JNIEnv *env, jobject obj, jstring resinfo)
+JNIEXPORT void JNICALL Java_TxCache_PQclear (JNIEnv *env, jclass obj, jstring resinfo)
 {
 	int res_id = UMASS_getResultId(env, obj, resinfo);
 	if (res_id == -1) return;
@@ -200,7 +200,7 @@ JNIEXPORT void JNICALL Java_TxCache_PQclear (JNIEnv *env, jobject obj, jstring r
 	conns[conn_id].results[res_id].res = NULL; 
 }
 
-JNIEXPORT void JNICALL Java_TxCache_PQfinish (JNIEnv *env, jobject obj, jstring conninfo)
+JNIEXPORT void JNICALL Java_TxCache_PQfinish (JNIEnv *env, jclass obj, jstring conninfo)
 {
 	int conn_id = UMASS_getConnId(env, obj, conninfo);
 	if (conn_id == -1) return;
@@ -216,7 +216,7 @@ JNIEXPORT void JNICALL Java_TxCache_PQfinish (JNIEnv *env, jobject obj, jstring 
 	conns[conn_id].conn = NULL; 
 }
 
-JNIEXPORT jstring JNICALL Java_TxCache_PQcmdStatus (JNIEnv *env, jobject obj, jstring resinfo)
+JNIEXPORT jstring JNICALL Java_TxCache_PQcmdStatus (JNIEnv *env, jclass obj, jstring resinfo)
 {
 	int res_id = UMASS_getResultId(env, obj, resinfo);
 	jstring ret = 0;
@@ -229,7 +229,7 @@ JNIEXPORT jstring JNICALL Java_TxCache_PQcmdStatus (JNIEnv *env, jobject obj, js
 	return ret;
 }
 
-JNIEXPORT jint JNICALL Java_TxCache_PQntuples (JNIEnv *env, jobject obj, jstring resinfo)
+JNIEXPORT jint JNICALL Java_TxCache_PQntuples (JNIEnv *env, jclass obj, jstring resinfo)
 {
 	int res_id = UMASS_getResultId(env, obj, resinfo);
 	jint ret = 0;
@@ -242,7 +242,7 @@ JNIEXPORT jint JNICALL Java_TxCache_PQntuples (JNIEnv *env, jobject obj, jstring
 	return ret;
 }
 
-JNIEXPORT jint JNICALL Java_TxCache_PQnfields (JNIEnv *env, jobject obj, jstring resinfo)
+JNIEXPORT jint JNICALL Java_TxCache_PQnfields (JNIEnv *env, jclass obj, jstring resinfo)
 {
 	int res_id = UMASS_getResultId(env, obj, resinfo);
 	jint ret = 0;
@@ -255,7 +255,7 @@ JNIEXPORT jint JNICALL Java_TxCache_PQnfields (JNIEnv *env, jobject obj, jstring
 	return ret;
 }
 
-JNIEXPORT jstring JNICALL Java_TxCache_PQgetvalue (JNIEnv *env, jobject obj, jstring resinfo, jint row_num, jint col_num)
+JNIEXPORT jstring JNICALL Java_TxCache_PQgetvalue (JNIEnv *env, jclass obj, jstring resinfo, jint row_num, jint col_num)
 {
 	int res_id = UMASS_getResultId(env, obj, resinfo);
 	jstring ret = 0;

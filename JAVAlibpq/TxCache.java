@@ -10,6 +10,11 @@ public class TxCache {
 	static final String INITIALIZATION_SUCCESS = "SUCCESS";
 	static final int MAX_NUMBER_OF_CONNECTIONS = 10;
 
+    
+    static {
+        System.loadLibrary("proxy");
+    }
+    
 	public static native String UMASSPQinitialize();
 	
     private static native String PQconnectdb(String conninfo);
@@ -25,9 +30,7 @@ public class TxCache {
 	public static native String PQgetvalue(String res, int i, int j);
 
 
-    static {
-        System.loadLibrary("proxy");
-    }
+
 
 	static final int MAX_SNAPSHOT_NUM = 10;
 	
@@ -80,7 +83,8 @@ public class TxCache {
 		pinset = new HashMap<String, List<Pin>>();
 		pincushion = new HashMap<String, List<Pin>>();
 		current_time = new HashMap<String, Integer>();
-		
+		tran_type = new HashMap<String, TransactionType>();
+        
 		String init = UMASSPQinitialize();
 		if (!init.equals(INITIALIZATION_SUCCESS)) {
 			System.err.println("DB Proxy Initialization Error");
@@ -174,6 +178,7 @@ public class TxCache {
 		if (number_of_connections == MAX_NUMBER_OF_CONNECTIONS) return "!TOO MANY CONNECTIONS!";
 		
 		String conn = PQconnectdb(conninfo);
+        System.out.println(conn);
 		caching.put(conn, doCache);
 		pinset.put(conn, new ArrayList<Pin>());
 		pincushion.put(conn, new LinkedList<Pin>());
@@ -258,7 +263,8 @@ public class TxCache {
 		//else invoke the original function;
 	}
     public static void main(String[] args) {
-        TxCache.initializeTxCache();
+        TxCache cache = new TxCache();
+        cache.UMASSPQinitialize();
         //functions
     }
 }

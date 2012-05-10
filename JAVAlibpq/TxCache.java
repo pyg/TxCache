@@ -165,6 +165,7 @@ public class TxCache {
 	public static String TxPQexec(String conn, String sqlstmt) {
 		if (!caching.containsKey(conn)) return null; // **No such connection
 		
+        System.out.println("DEBUG" + tran_type.get(conn));
 		String res = PQexec(conn, sqlstmt);
 		if (!caching.get(conn)) return res; // **Do nothing
 		//if (tran_type == READONLY) {
@@ -178,7 +179,6 @@ public class TxCache {
 		if (number_of_connections == MAX_NUMBER_OF_CONNECTIONS) return "!TOO MANY CONNECTIONS!";
 		
 		String conn = PQconnectdb(conninfo);
-        System.out.println(conn);
 		caching.put(conn, doCache);
 		pinset.put(conn, new ArrayList<Pin>());
 		pincushion.put(conn, new LinkedList<Pin>());
@@ -205,7 +205,10 @@ public class TxCache {
 	}
 
     @SuppressWarnings("unchecked")
-	public static <T> T wrap(String clazz, String method, Object... args) throws Exception { 
+	public static <T> T wrap(String clazz, String method, String conn, Object... args) throws Exception { 
+        if (tran_type.get(conn) == TransactionType.NON) tran_type.put(conn, TransactionType.READONLY);
+        else tran_type.put(conn, TransactionType.NON);
+        
         Class<?> theClass = Class.forName(clazz);
 		Class<?>[] arguments = new Class<?>[args.length];
 		
@@ -219,7 +222,7 @@ public class TxCache {
 			arguments[i] = args[i].getClass();
 		}
         
-        System.out.println(key); // valid in cache? return if
+        //System.out.println(key); // valid in cache? return if
         
         
         Method toCall = theClass.getMethod(method, arguments);

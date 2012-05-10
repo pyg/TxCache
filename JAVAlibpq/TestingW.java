@@ -8,7 +8,7 @@
 
 import java.util.Date;
 
-public class TestingW implements Runnable {
+public class TestingW {
 	static String conninfo = "dbname=test host=emotion.cs.umass.edu user=keen password=hunter2";
     //ConnectDB db;
     //String init;
@@ -19,9 +19,10 @@ public class TestingW implements Runnable {
 		
         String res = TxCache.TxPQexec(conn, command);
         
-		for (int i = 0; i < (Integer)TxCache.wrap("TxCache","PQntuples",res); ++i) {
-			for (int j = 0; j < (Integer)TxCache.wrap("TxCache","PQnfields",res); ++j) {
-				System.out.print(String.format("%s\t",TxCache.wrap("TxCache","PQgetvalue",res,i,j)));
+		for (int i = 0; i < TxCache.PQntuples(res); ++i) {
+			for (int j = 0; j < TxCache.PQnfields(res); ++j) {
+				//System.out.print(String.format("%s\t",TxCache.wrap("TxCache","PQgetvalue",res,i,j)));
+                System.out.print(String.format("%s\t",TxCache.PQgetvalue(res,i,j)));
 			}
 			System.out.println();
 		}
@@ -30,14 +31,9 @@ public class TestingW implements Runnable {
         return (new Date()).getTime() - time;
 	}
 	
-	public static void executeu(String command, ConnectDB db, String conn) {
-		//String conn = db.PQconnectdb(conninfo);
-		String res = db.PQexec(conn, command);
-		db.PQclear(res);
-	}
-	
-	public void run() {
-
+	public static void main(String[] args) {
+String conninfo = "dbname=test host=emotion.cs.umass.edu user=keen password=hunter2";
+        
         TxCache.initializeTxCache();
         String conn = TxCache.TxPQconnectdb(conninfo,true);
         //TxCache.wrap("TestingW","executeq","select * from testuser limit 100;",conn);
@@ -51,7 +47,11 @@ String conn = db.PQconnectdb(conninfo);
         //String conn = db.PQconnectdb(conninfo);
 //TestingW.executeu("insert into userpref (name,preference,color,fid) values ('test1','testpreference',5,233456;",conn);
         try {
-TestingW.executeq("select * from testuser limit 100;",conn);
+            TxCache.wrap("TestingW","executeq",conn,"select * from testuser limit 100;",conn);
+            TxCache.wrap("TestingW","executeq",conn,"select * from testuser limit 100;",conn);
+            TxCache.wrap("TestingW","executeq",conn,"select * from testuser limit 100;",conn);
+        } catch (Exception e) {}
+            /*
 TestingW.executeq("select * from userpref,testuser where userpref.color = 7 and userpref.name = testuser.name limit 10;",conn);
 TestingW.executeq("select * from userpref where fid > 984653 and fid < 984853;",conn);
 TestingW.executeq("select * from testuser where id = 984653;",conn);
@@ -76,7 +76,7 @@ TestingW.executeq("select * from userpref where preference like '%7385877%' 100;
         TestingW.executeq("select * from userpref where preference like '%7385877%' 100;",conn);
         System.out.println();
         TxCache.TxPQfinish(conn);
-        } catch (Exception e) { }
+        } catch (Exception e) { System.out.println(e);}
 //TestingW.executeu("insert into userpref (name,preference,color,fid) values ('test1','testpreference',5,233456;");
 
 /*

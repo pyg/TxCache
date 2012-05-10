@@ -1,4 +1,11 @@
 //package testApp;
+
+//javac -classpath . Testing.java
+//java -Djava.library.path=. -classpath . Testing
+
+
+
+
 import java.util.Date;
 
 public class Testing implements Runnable {

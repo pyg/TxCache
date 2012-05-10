@@ -36,6 +36,9 @@ public class ConnectDB {
 	public native void PQclear(String res);
 	public native String PQcmdStatus(String res);
 	public native void PQfinish(String conn);
+	public native int PQntuples(String res);
+	public native int PQnfields(String res);
+	public native String PQgetvalue(String res, int i, int j);
 
 
     static {
@@ -151,7 +154,19 @@ public class ConnectDB {
     }
 
 	public static void main(String[] args) {
-    	(new ConnectDB()).print(args);
+    	//(new ConnectDB()).print(args);
+    	ConnectDB db = new ConnectDB();
+		String init = db.UMASSPQinitialize();
+		String conninfo = "dbname=test host=emotion.cs.umass.edu user=keen password=hunter2";
+		String conn = db.PQconnectdb(conninfo);
+
+		String res = db.PQexec(conn, "select * from testuser limit 100;");
+		for (int i = 0; i < db.PQntuples(res); ++i) {
+			for (int j = 0; j < db.PQnfields(res); ++j) {
+				System.out.print(String.format("%s\t",db.PQgetvalue(res,i,j)));
+			}
+			System.out.println();
+		}
     	return;
     }
 }

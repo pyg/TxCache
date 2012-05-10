@@ -229,4 +229,45 @@ JNIEXPORT jstring JNICALL Java_ConnectDB_PQcmdStatus (JNIEnv *env, jobject obj, 
 	return ret;
 }
 
+JNIEXPORT jint JNICALL Java_ConnectDB_PQntuples (JNIEnv *env, jobject obj, jstring resinfo)
+{
+	int res_id = UMASS_getResultId(env, obj, resinfo);
+	jint ret = 0;
+	if (res_id == -1) { //ERROR
+		ret = PQntuples(NULL);
+		return ret;
+	}
+
+	ret = PQntuples(conns[res_id / 100].results[res_id % 100].res);
+	return ret;
+}
+
+JNIEXPORT jint JNICALL Java_ConnectDB_PQnfields (JNIEnv *env, jobject obj, jstring resinfo)
+{
+	int res_id = UMASS_getResultId(env, obj, resinfo);
+	jint ret = 0;
+	if (res_id == -1) { //ERROR
+		ret = PQnfields(NULL);
+		return ret;
+	}
+
+	ret = PQnfields(conns[res_id / 100].results[res_id % 100].res);
+	return ret;
+}
+
+JNIEXPORT jstring JNICALL Java_ConnectDB_PQgetvalue (JNIEnv *env, jobject obj, jstring resinfo, jint row_num, jint col_num)
+{
+	int res_id = UMASS_getResultId(env, obj, resinfo);
+	jstring ret = 0;
+	int r = row_num;
+	int c = col_num;
+	if (res_id == -1) {
+		ret = env->NewStringUTF(PQgetvalue(NULL, r, c));
+		return ret;
+	}
+	
+	ret = env->NewStringUTF(PQgetvalue(conns[res_id / 100].results[res_id % 100].res, r, c));
+	return ret;
+}
+
 

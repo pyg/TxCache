@@ -8,31 +8,39 @@ public class Client {
 		Socket conn; 
 		ObjectOutputStream out; 
 		ObjectInputStream input;
+		Employee katie = new Employee(12, "katie");
 		try {
 			BufferedReader read=new BufferedReader(new InputStreamReader(System.in)); 
-			Employee katie = new Employee(12, "katie");
-			while(true) {
-				conn = new Socket("localhost", port_num); 
-				out = new ObjectOutputStream(conn.getOutputStream()); 
-				input = new ObjectInputStream(conn.getInputStream());
 
-				System.out.println("input:"); 
-				String s=read.readLine();
-				if(s.equals("quit")) {
+			conn = new Socket("localhost", port_num); 
+			out = new ObjectOutputStream(conn.getOutputStream()); 
+			input = new ObjectInputStream(conn.getInputStream());
+			while(true) {
+				try {
+					System.out.println("input:"); 
+					String s=read.readLine();
+					if(s.equals("quit")) {
+						out.writeObject(null); 
+						out.close(); 
+						input.close();
+						conn.close();
+						break;
+					}				
+					katie.message = s;
+					out.writeObject(katie); 
+					out.flush();
+					katie= (Employee)input.readObject(); 
+					katie.heard();
+				} catch (Exception e) {
+					System.out.println("catched in client");
+					conn.setReuseAddress(true);
 					out.close(); 
 					input.close();
 					conn.close();
-					break;
-				}				
-				katie.message = s;
-				out.writeObject(katie); 
-				out.flush();
-				katie= (Employee)input.readObject(); 
-				katie.heard();
-				conn.setReuseAddress(true);
-				out.close(); 
-				input.close();
-				conn.close();
+					conn = new Socket("localhost", port_num); 
+					out = new ObjectOutputStream(conn.getOutputStream()); 
+					input = new ObjectInputStream(conn.getInputStream());
+				}
 			}
 //			conn.setReuseAddress(true);
 		} catch (Exception e) {

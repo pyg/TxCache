@@ -1,6 +1,32 @@
 import java.util.*;
 
 public class TxCache {
+	final int CONNECTION_OK = 0;
+	final int PGRES_COMMAND_OK = 1;
+	final String INITIALIZATION_SUCCESS = "SUCCESS";
+	final int MAX_NUMBER_OF_CONNECTIONS = 10;
+
+	public native String UMASSPQinitialize();
+	
+    public native String PQconnectdb(String conninfo);
+    public native int PQstatus(String conn);
+	public native String PQerrorMessage(String conn);
+	public native String PQexec(String conn, String sql);
+	public native int PQresultStatus(String res);
+	public native void PQclear(String res);
+	public native String PQcmdStatus(String res);
+	public native void PQfinish(String conn);
+	public native int PQntuples(String res);
+	public native int PQnfields(String res);
+	public native String PQgetvalue(String res, int i, int j);
+
+
+    static {
+        System.loadLibrary("proxy");
+    }
+
+	final int MAX_SNAPSHOT_NUM = 10;
+	
 	public enum TransactionType {
 		READONLY, READWRITE, NON
 	}
@@ -33,17 +59,26 @@ public class TxCache {
 	}
 	
 	private static TxCache txCache = null;
-	private boolean caching;
-	private List<Pin> pinset;
-	private List<Pin> pincushion;
-	private int current_time;
 	
-	private TransactionType tran_type;
+	private Map<String, Boolean> caching;
+	private Map<String, List<Pin>> pinset;
+	private Map<String, List<Pin>> pincushion;
+	private Map<String, Integer> current_time;
+	
+	private Map<String, TransactionType> tran_type;
 	
 	private TxCache() {
-		caching = true;
-		pinset = new ArrayList<Pin>();
-		pincushion = new LinkedList<Pin>();
+		caching = new Map<String, Boolean>();
+		pinset = new Map<String, List<Pin>>();
+		pincushion = new Map<String, List<Pin>>();
+		current_time = new Map<String, Integer>();
+		
+		String init = UMASSPQinitialize();
+		if (!init.equals(INITIALIZATION_SUCCESS)) {
+			System.err.println("DB Proxy Initialization Error");
+			System.exit(1);
+		}
+		else System.out.println("Initialization: " + init);
 	}
 	
 	public static TxCache getTxCache() {
@@ -51,46 +86,69 @@ public class TxCache {
 		return txCache;
 	}
 
-	public void BEGIN_RO(int staleness) {
-		if (!caching) return; // **Do nothing
+	public void BEGIN_RO(String conn, int staleness) {
+		if (!cache.containsKey(conn)) return; // **No such connection
+		if (!caching.get(conn)) { // **Do nothing
+			PQexecWrapper(conn, "BEGIN READ ONLY ISOLATION LEVEL SERIALIZABLE;");
+			return;
+		}
+		
 		// **DON'T tell the DB to start RO, as we don't know the snapshot ID before checking the cache
 		
-		tran_type = TransactionType.READONLY;
+		tran_type.put(conn, TransactionType.READONLY);
 		// **No need to tell the Cache Server to begin-RO, currently
-		pinset.clear();
-		for (Pin pin : pincushion) if (pin.getTimestamp() + staleness >= current_time) {
+		pinset.get(conn).clear();
+		for (Pin pin : pincushion.get(conn)) if (pin.getTimestamp() + staleness >= current_time) {
 			pin.useIt();
-			pinset.add(pin);
+			pinset.get(conn).add(pin);
 		}
 	}
 
-	public void BEGIN_RW() {
-		//if (!caching) retunr;
-		//tell the DB to start RW
-		//tran_type = READWRITE;
-		//if (!caching) return;
-		//tell the Cache Server to start RW
+	public void BEGIN_RW(String conn) {
+		if (!cache.containsKey(conn)) return; // **No such connection
+
+		// **tell the DB to start RW		
+		PQexecWrapper(conn, "BEGIN ISOLATION LEVEL SERIALIZABLE;");
+		tran_type.put(conn, TransactionType.READWRITE);
+		// **No need to tell the Cache Server to start RW
 	}
 
-	public void COMMIT() {
-		//tell the DB to COMMIT
-		//tran_type = NOTRANSACTION;
-		//if (!caching) return;
+	public void COMMIT(String conn) {
+		if (!cache.containsKey(conn)) return; // **No such connection
+		
+		// **tell the DB to COMMIT
+		PQexecWrapper(conn, "COMMIT;");
+		
+		if (!caching.get(conn)) { // **Do nothing
+			tran_type.put(conn, TransactionType.NON);
+			return;
+		}
 		//get the invalidation tags
 		//tell the Cache Server to COMMIT(tags)
 		//if (tran_type == READONLY) for (pin in pinset) --pin.using;
+		tran_type.put(conn, TransactionType.NON);
 	}
 
-	public void ABORT() {
-		//tell the DB to ABORT
-		//tran_type = NOTRANSACTION;	
-		//if (!caching) return;
-		//tell the Cache Server to ABORT
+	public void ABORT(String conn) {
+		if (!cache.containsKey(conn)) return; // **No such connection
+		
+		// **tell the DB to ABORT
+		PQexecWrapper(conn, "ABORT;");
+		
+		if (!caching.get(conn)) { // **Do nothing
+			tran_type.put(conn, TransactionType.NON);
+			return;
+		}
+		// ** No need to tell the Cache Server to ABORT
 		//if (tran_type == READONLY) for (pin in pinset) --pin.using;
+		tran_type.put(conn, TransactionType.NON);
 	}
 
-	public void PQexecWrapper() {
-		//PQexec(...);
+	public void PQexecWrapper(String conn, String sqlstmt) {
+		if (!cache.containsKey(conn)) return; // **No such connection
+		
+		PQexec(conn, sqlstmt);
+		if (!caching.get(conn)) return // **Do nothing
 		//if (tran_type == READONLY) {
 		//	update interval
 		//	tagset.add(tags);
@@ -101,7 +159,7 @@ public class TxCache {
 		//tell the DB to UNPIN(snapshotid);
 	}
 
-	public void some_wrapper() {
+	public void some_wrapper() { // It should be in user program and outside TxCache.
 		//if (tran_type == READONLY) {
 		//	look up cache and update pinset (and --pin.using!)
 		//	if (hit) return value;
@@ -132,7 +190,7 @@ public class TxCache {
 }
 
 /*
-//const int MAX_SNAPSHOT_NUM = 10;
+
 
 
 //synchronized PinCushion pincushion;

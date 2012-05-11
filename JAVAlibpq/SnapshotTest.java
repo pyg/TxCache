@@ -33,6 +33,11 @@ public SnapshotTest {
 		System.out.println(res);
 		TxCache.COMMIT(conn);
 		
+		TxCache.BEGIN_RW(conn);
+		res = TxCache.wrap("SnapshotTest","executeq","","update testuser set name = random()::text where id = 50;");
+		TxCache.COMMIT(conn);
+		System.out.println(res);
+		
 		TxCache.BEGIN_RO(conn,2);
 		long res = TxCache.wrap("SnapshotTest","executeq","","select name from testuser where id = 50;");
 		System.out.println(res);
